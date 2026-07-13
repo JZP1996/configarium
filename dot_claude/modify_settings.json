@@ -1,13 +1,12 @@
 #!/bin/sh
 # chezmoi modify_ script for ~/.claude/settings.json.
-# Runs on every `chezmoi apply` with the current file content on stdin; stdout
-# becomes the new content.
 set -eu
 
 input="$(cat)"
 [ -z "$input" ] && input='{}'
 
 if ! command -v node >/dev/null 2>&1; then
+  printf '%s\n' 'warning: node is unavailable; Claude Code managed settings were not applied' >&2
   printf '%s' "$input"
   exit 0
 fi
@@ -15,7 +14,7 @@ fi
 printf '%s' "$input" | node -e '
   const fs = require("fs")
   const config = JSON.parse(fs.readFileSync(0, "utf8") || "{}")
-  const managed = [
+  const managedAllow = [
     "Bash(ls:*)",
     "Bash(cat:*)",
     "Bash(grep:*)",
@@ -54,21 +53,24 @@ printf '%s' "$input" | node -e '
     "WebSearch",
     "WebFetch"
   ]
+  const managedEnv = {
+    CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+    CLAUDE_CODE_AUTO_COMPACT_WINDOW: "1000000",
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "85"
+  }
   const permissions = config.permissions && typeof config.permissions === "object"
     && !Array.isArray(config.permissions) ? config.permissions : {}
   const env = config.env && typeof config.env === "object" && !Array.isArray(config.env)
     ? config.env : {}
   const allow = Array.isArray(permissions.allow) ? permissions.allow : []
 
-  config.permissions = { ...permissions, allow: [...new Set([...allow, ...managed])] }
+  config.permissions = { ...permissions, allow: [...new Set([...allow, ...managedAllow])] }
   config.autoCompactEnabled = false
   config.disableDeepLinkRegistration = "disable"
   config.env = {
     ...env,
-    CLAUDE_CODE_ATTRIBUTION_HEADER: "0",
-    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
-    CLAUDE_CODE_AUTO_COMPACT_WINDOW: "1000000",
-    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "85"
+    ...managedEnv
   }
 
   process.stdout.write(`${JSON.stringify(config, null, 2)}\n`)

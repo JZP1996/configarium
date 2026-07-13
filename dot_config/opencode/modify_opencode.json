@@ -13,9 +13,9 @@ fi
 
 printf '%s' "$input" | node -e '
   const fs = require("fs")
-  const config = JSON.parse(fs.readFileSync(0, "utf8") || "{}")
-  const permission = config.permission && typeof config.permission === "object"
-    && !Array.isArray(config.permission) ? config.permission : {}
+  const existing = JSON.parse(fs.readFileSync(0, "utf8") || "{}")
+  const permission = existing.permission && typeof existing.permission === "object"
+    && !Array.isArray(existing.permission) ? existing.permission : {}
 
   const mergeRules = (current, managed) =>
     current && typeof current === "object" && !Array.isArray(current)
@@ -44,52 +44,13 @@ printf '%s' "$input" | node -e '
   const managedEdit = {
     "~/.config/opencode/**": "deny"
   }
-  const managedBash = Object.fromEntries([
-    "*",
-    "pwd*",
-    "ls*",
-    "tree*",
-    "find*",
-    "stat*",
-    "file*",
-    "which*",
-    "cat*",
-    "head*",
-    "tail*",
-    "wc*",
-    "sort*",
-    "uniq*",
-    "column*",
-    "diff*",
-    "grep*",
-    "rg*",
-    "date*",
-    "echo*",
-    "git status*",
-    "git diff*",
-    "git log*",
-    "git show*",
-    "git blame*",
-    "git describe*",
-    "git rev-parse*",
-    "git ls-files*",
-    "chezmoi diff*",
-    "chezmoi data*",
-    "chezmoi managed*",
-    "chezmoi execute-template*",
-    "chezmoi cat*",
-    "chezmoi source-path*",
-    "chezmoi status*",
-    "chezmoi verify*"
-  ].map((pattern) => [pattern, pattern === "*" ? "ask" : "allow"]))
 
-  config.permission = {
+  existing.permission = {
     ...permission,
     ...managedPermission,
     external_directory: mergeRules(permission.external_directory, managedExternal),
-    edit: mergeRules(permission.edit, managedEdit),
-    bash: mergeRules(permission.bash, managedBash)
+    edit: mergeRules(permission.edit, managedEdit)
   }
 
-  process.stdout.write(`${JSON.stringify(config, null, 2)}\n`)
+  process.stdout.write(`${JSON.stringify(existing, null, 2)}\n`)
 '

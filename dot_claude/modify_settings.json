@@ -1,0 +1,73 @@
+#!/bin/sh
+# chezmoi modify_ script for ~/.claude/settings.json.
+# Runs on every `chezmoi apply` with the current file content on stdin; stdout
+# becomes the new content.
+#
+# Scope is deliberately narrow. Managed (enforced on every apply):
+#   - .permissions.allow: read-only allowlist, unioned in (never removes yours)
+#   - .autoCompactEnabled, .disableDeepLinkRegistration: set-and-forget prefs
+#   - .env: the CLAUDE_CODE_* behavior flags are merged in; other env keys
+#     (e.g. NPM_CONFIG_REGISTRY) are preserved.
+# Left untouched so this coexists with `claude plugin ...` / /plugin / /config:
+#   enabledPlugins, extraKnownMarketplaces, model, effortLevel.
+set -eu
+
+input="$(cat)"
+[ -z "$input" ] && input='{}'
+
+# jq can be absent on first bootstrap (before Homebrew runs). Leave the file
+# untouched rather than break `chezmoi apply`; a later apply merges the list.
+if ! command -v jq >/dev/null 2>&1; then
+  printf '%s' "$input"
+  exit 0
+fi
+
+printf '%s' "$input" | jq --argjson managed '[
+  "Bash(ls:*)",
+  "Bash(cat:*)",
+  "Bash(grep:*)",
+  "Bash(rg:*)",
+  "Bash(find:*)",
+  "Bash(head:*)",
+  "Bash(tail:*)",
+  "Bash(wc:*)",
+  "Bash(diff:*)",
+  "Bash(tree:*)",
+  "Bash(pwd:*)",
+  "Bash(which:*)",
+  "Bash(file:*)",
+  "Bash(stat:*)",
+  "Bash(date:*)",
+  "Bash(echo:*)",
+  "Bash(sort:*)",
+  "Bash(uniq:*)",
+  "Bash(column:*)",
+  "Bash(git status:*)",
+  "Bash(git diff:*)",
+  "Bash(git log:*)",
+  "Bash(git show:*)",
+  "Bash(git blame:*)",
+  "Bash(git ls-files:*)",
+  "Bash(git rev-parse:*)",
+  "Bash(git describe:*)",
+  "Bash(chezmoi diff:*)",
+  "Bash(chezmoi data:*)",
+  "Bash(chezmoi managed:*)",
+  "Bash(chezmoi execute-template:*)",
+  "Bash(chezmoi cat:*)",
+  "Bash(chezmoi source-path:*)",
+  "Bash(chezmoi status:*)",
+  "Bash(chezmoi verify:*)",
+  "WebSearch",
+  "WebFetch"
+]' '
+  .permissions.allow = ((.permissions.allow // []) + $managed | unique)
+  | .autoCompactEnabled = false
+  | .disableDeepLinkRegistration = "disable"
+  | .env = ((.env // {}) + {
+      "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+      "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000",
+      "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "85"
+    })
+'

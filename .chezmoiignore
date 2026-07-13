@@ -1,0 +1,26 @@
+README.md
+.gitattributes
+.vscode
+.vscode/**
+docs
+docs/**
+plan
+plan/**
+agents
+agents/**
+LICENSE
+SECURITY.md
+THIRD_PARTY_NOTICES.md
+THIRD_PARTY_LICENSES
+THIRD_PARTY_LICENSES/**
+.github
+.github/**
+.gitleaks.toml
+scripts
+scripts/**
+{{ if eq .chezmoi.os "windows" }}
+.zsh
+.zsh/**
+.config/ghostty
+.config/ghostty/**
+{{ end }}

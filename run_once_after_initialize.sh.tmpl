@@ -1,0 +1,51 @@
+{{ if ne .chezmoi.os "windows" -}}
+#!/bin/sh
+# Per-machine initialization for macOS/Linux. Runs once only when explicitly enabled.
+set -eu
+
+if [ "${CHEZMOI_INSTALL_OPTIONAL_TOOLS:-}" != "1" ]; then
+  exit 0
+fi
+
+# Revisions are intentionally fixed; see THIRD_PARTY_NOTICES.md before updating.
+install_git_revision() {
+  repository="$1"
+  revision="$2"
+  destination="$3"
+
+  if [ -e "$destination" ]; then
+    return
+  fi
+
+  git clone "$repository" "$destination"
+  git -C "$destination" checkout --detach "$revision"
+}
+
+# Install Oh My Zsh without executing a remote installer script.
+install_git_revision \
+  https://github.com/ohmyzsh/ohmyzsh.git \
+  677a4592b18c08ddea737f8aca70bac0e9fc9313 \
+  "$HOME/.oh-my-zsh"
+
+# Install zsh plugins into ~/.zsh (paths match ~/.zsh/.zshrc.common).
+ZSH_DIR="$HOME/.zsh"
+mkdir -p "$ZSH_DIR"
+install_git_revision \
+  https://github.com/zsh-users/zsh-autosuggestions.git \
+  85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5 \
+  "$ZSH_DIR/zsh-autosuggestions"
+install_git_revision \
+  https://github.com/zsh-users/zsh-syntax-highlighting.git \
+  1d85c692615a25fe2293bdd44b34c217d5d2bf04 \
+  "$ZSH_DIR/zsh-syntax-highlighting"
+
+# Ensure ~/.zshrc sources the common chezmoi-managed config (~/.zsh/.zshrc.common).
+ZSHRC="$HOME/.zshrc"
+SRC_LINE='[[ -f ~/.zsh/.zshrc.common ]] && source ~/.zsh/.zshrc.common'
+
+[ -f "$ZSHRC" ] || touch "$ZSHRC"
+
+if ! grep -qF '.zsh/.zshrc.common' "$ZSHRC"; then
+  printf '%s\n\n%s\n' "$SRC_LINE" "$(cat "$ZSHRC")" > "$ZSHRC"
+fi
+{{ end -}}

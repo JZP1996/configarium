@@ -27,7 +27,7 @@ It installs Oh My Zsh and zsh plugins from the fixed revisions in [THIRD_PARTY_N
 | --- | --- | --- |
 | `dot_agents/` | `~/.agents/` | Shared Agent Skills links. |
 | `dot_claude/` | `~/.claude/` | Claude Code instructions and coding Skill links. |
-| `dot_config/` | `~/.config/` | Ghostty configuration, OpenCode instructions, and plugin links. |
+| `dot_config/` | `~/.config/` | Ghostty configuration, OpenCode instructions, permissions, and plugin links. |
 | `dot_zsh/` | `~/.zsh/` | Shared zsh configuration and functions. |
 | `agents/` | Not deployed | Source for Skills, instructions, and local agent plugins. |
 | `run_once_after_initialize.sh.tmpl` | Run once | Optional zsh bootstrap. |

@@ -1,0 +1,82 @@
+#!/bin/sh
+# chezmoi modify_ script for ~/.config/opencode/opencode.json.
+# Runs on every `chezmoi apply` with the current file content on stdin; stdout
+# becomes the new content. Existing OpenCode settings and custom permission
+# rules are preserved unless they conflict with the managed safety rules.
+set -eu
+
+input="$(cat)"
+[ -z "$input" ] && input='{}'
+
+if ! command -v node >/dev/null 2>&1; then
+  printf '%s' "$input"
+  exit 0
+fi
+
+printf '%s' "$input" | node -e '
+  const fs = require("fs")
+  const config = JSON.parse(fs.readFileSync(0, "utf8") || "{}")
+  const bashRules = Object.fromEntries([
+    "ls*",
+    "cat*",
+    "grep*",
+    "rg*",
+    "find*",
+    "head*",
+    "tail*",
+    "wc*",
+    "diff*",
+    "tree*",
+    "pwd*",
+    "which*",
+    "file*",
+    "stat*",
+    "date*",
+    "echo*",
+    "sort*",
+    "uniq*",
+    "column*",
+    "git status*",
+    "git diff*",
+    "git log*",
+    "git show*",
+    "git blame*",
+    "git ls-files*",
+    "git rev-parse*",
+    "git describe*",
+    "chezmoi diff*",
+    "chezmoi data*",
+    "chezmoi managed*",
+    "chezmoi execute-template*",
+    "chezmoi cat*",
+    "chezmoi source-path*",
+    "chezmoi status*",
+    "chezmoi verify*"
+  ].map((pattern) => [pattern, "allow"]))
+  const mergeRules = (current, managed) =>
+    current && typeof current === "object" && !Array.isArray(current)
+      ? { ...current, ...managed }
+      : managed
+  const permission = config.permission && typeof config.permission === "object"
+    && !Array.isArray(config.permission) ? config.permission : {}
+
+  config.permission = {
+    ...permission,
+    "*": "ask",
+    read: "allow",
+    glob: "allow",
+    grep: "allow",
+    lsp: "allow",
+    webfetch: "allow",
+    websearch: "allow",
+    external_directory: mergeRules(permission.external_directory, {
+      "~/.config/opencode/**": "allow"
+    }),
+    edit: mergeRules(permission.edit, {
+      "~/.config/opencode/**": "deny"
+    }),
+    bash: mergeRules(permission.bash, { "*": "ask", ...bashRules })
+  }
+
+  process.stdout.write(`${JSON.stringify(config, null, 2)}\n`)
+'

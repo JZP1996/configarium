@@ -6,7 +6,7 @@ input="$(cat)"
 [ -z "$input" ] && input='{}'
 
 if ! command -v node >/dev/null 2>&1; then
-  printf '%s\n' 'warning: node is unavailable; OpenCode managed permissions were not applied' >&2
+  printf '%s\n' 'warning: node is unavailable; OpenCode managed directory permissions were not applied' >&2
   printf '%s' "$input"
   exit 0
 fi
@@ -24,20 +24,6 @@ printf '%s' "$input" | node -e '
         ? { "*": current, ...managed }
         : managed
 
-  const managedPermission = {
-    "*": "ask",
-    read: "allow",
-    glob: "allow",
-    grep: "allow",
-    list: "allow",
-    lsp: "allow",
-    webfetch: "allow",
-    websearch: "allow",
-    question: "allow",
-    task: "allow",
-    skill: "allow",
-    doom_loop: "ask"
-  }
   const managedExternal = {
     "~/.config/opencode/**": "allow"
   }
@@ -47,7 +33,6 @@ printf '%s' "$input" | node -e '
 
   existing.permission = {
     ...permission,
-    ...managedPermission,
     external_directory: mergeRules(permission.external_directory, managedExternal),
     edit: mergeRules(permission.edit, managedEdit)
   }

@@ -16,15 +16,19 @@ sudo apt-get update
 sudo apt-get install -y \
   build-essential \
   ca-certificates \
-  chezmoi \
   curl \
   extrepo \
   git \
-  pipx \
   ripgrep \
   tree \
   unzip \
   zsh
+
+export PATH="$HOME/.local/bin:$PATH"
+
+if ! command -v chezmoi >/dev/null 2>&1; then
+  sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+fi
 
 if ! command -v mise >/dev/null 2>&1; then
   sudo extrepo enable mise
@@ -32,16 +36,8 @@ if ! command -v mise >/dev/null 2>&1; then
   sudo apt-get install -y mise
 fi
 
-uv_version=$(pipx runpip uv show uv 2>/dev/null | sed -n 's/^Version: //p')
-if [ -z "$uv_version" ]; then
-  if command -v uv >/dev/null 2>&1; then
-    printf '%s\n' 'error: uv exists but is not managed by pipx' >&2
-    exit 1
-  fi
-
-  pipx install uv==0.11.29
-elif [ "$uv_version" != "0.11.29" ]; then
-  pipx install --force uv==0.11.29
+if ! command -v uv >/dev/null 2>&1; then
+  curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
 fi
 
 printf '%s\n' 'WSL bootstrap complete; install runtimes with mise as needed'

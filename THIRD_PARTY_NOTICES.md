@@ -14,7 +14,7 @@ The root [LICENSE](LICENSE) applies only to original material in this repository
 
 ## Updating pinned bootstrap dependencies
 
-Review the upstream release, commit, license, and any required notices before changing a revision. Update the revision in `run_onchange_after_initialize.sh.tmpl` and this table in the same change. Do not restore a `curl | sh` installer.
+Review the upstream release, commit, license, and any required notices before changing a revision. Update the revision in `run_onchange_after_initialize.sh.tmpl` and this table in the same change. Do not replace these pinned zsh dependencies with remote installers.
 
 ## License evidence limitation
 

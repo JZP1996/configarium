@@ -40,7 +40,7 @@ Run the bootstrap:
 ./scripts/bootstrap/bootstrap-wsl.sh
 ```
 
-This installs Linux prerequisites, chezmoi, mise and pipx through apt, then installs a fixed uv version from PyPI with pipx. It does not use Homebrew, Scoop, or Winget.
+This installs Linux prerequisites and mise through apt, then installs chezmoi and uv with their official installers. Both binaries are installed under `~/.local/bin`, and the installers do not modify shell profiles. It does not use Homebrew, Scoop, or Winget.
 
 ### Windows
 

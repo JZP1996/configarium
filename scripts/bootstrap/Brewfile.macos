@@ -1,0 +1,6 @@
+brew "bash"
+brew "chezmoi"
+brew "mise"
+brew "ripgrep"
+brew "tree"
+brew "uv"

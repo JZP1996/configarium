@@ -18,9 +18,12 @@ THIRD_PARTY_LICENSES/**
 .gitleaks.toml
 scripts
 scripts/**
-{{ if eq .chezmoi.os "windows" }}
+{{ $isWSL := and (eq .chezmoi.os "linux") (ne (env "WSL_DISTRO_NAME") "") -}}
+{{ if not (or (eq .chezmoi.os "darwin") $isWSL) }}
 .zsh
 .zsh/**
+{{ end }}
+{{ if ne .chezmoi.os "darwin" }}
 .config/ghostty
 .config/ghostty/**
 {{ end }}

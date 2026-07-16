@@ -6,6 +6,8 @@ This repository keeps reusable agent guidance in Agent Skills so multiple tools 
 
 `agents/skills/<name>/SKILL.md` is the source of truth for all centrally managed skill content.
 
+For third-party skills, `agents/skills/sources.json` additionally records the upstream repository, immutable revision, license, and refresh policy. Run `node scripts/refresh-vendored-skills.mjs check` to detect upstream changes. This check is intentionally separate from `chezmoi apply`: deployment remains local and idempotent, while refreshing vendor content requires review and a normal Git commit.
+
 Put a skill here when the behavior is reusable across agents, such as coding guidelines, review workflows, commit or PR writing, web search guidance, and language playbooks.
 
 Do not put the only copy of reusable guidance inside a Claude Code plugin, OpenCode plugin, Copilot prompt, or another tool-specific config. Those locations should be thin deployment or runtime wrappers.

@@ -2,61 +2,50 @@
 
 ## Bootstrap
 
-Bootstrap installs platform infrastructure only. It does not install language runtimes or run `chezmoi apply`.
-
-The bootstrap scripts run from a reviewed checkout of this repository. Clone it before running the platform script.
+Bootstrap installs platform infrastructure plus the common Node LTS and Python 3.12 runtimes. It runs from the chezmoi source directory and does not run `chezmoi apply`.
 
 ### macOS
 
-Install Homebrew from [brew.sh](https://brew.sh). Its Command Line Tools dependency provides Apple Git. Then clone and review the repository:
+Install Homebrew from [brew.sh](https://brew.sh), install chezmoi, then initialize this repository using chezmoi's default source directory:
 
 ```sh
-git clone https://github.com/JZP1996/configarium.git "$HOME/src/configarium"
-cd "$HOME/src/configarium"
+brew install chezmoi
+chezmoi init https://github.com/JZP1996/configarium.git
 ```
 
-Run the bootstrap:
+Review the source, then run the bootstrap:
 
 ```sh
-./scripts/bootstrap/bootstrap-macos.sh
+"$(chezmoi source-path)/scripts/bootstrap/bootstrap-macos.sh"
 ```
 
-This installs the formulae declared in `scripts/bootstrap/Brewfile.macos`. Apple Git remains the default; the Brewfile does not install another Git.
+This installs the formulae declared in `scripts/bootstrap/Brewfile.macos`, installs Node LTS and Python 3.12 with mise, and enables `.nvmrc` and `.python-version`. Apple Git remains the default; the Brewfile does not install another Git.
 
 ### WSL
 
-On a Debian- or Ubuntu-based WSL distribution, install Git, then clone and review the repository:
+On a Debian- or Ubuntu-based WSL distribution, install chezmoi with its official installer, then initialize this repository:
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y git
-git clone https://github.com/JZP1996/configarium.git "$HOME/src/configarium"
-cd "$HOME/src/configarium"
+sudo apt-get install -y ca-certificates curl
+sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+chezmoi init https://github.com/JZP1996/configarium.git
 ```
 
-Run the bootstrap:
+Review the source, then run the bootstrap:
 
 ```sh
-./scripts/bootstrap/bootstrap-wsl.sh
+"$(chezmoi source-path)/scripts/bootstrap/bootstrap-wsl.sh"
 ```
 
-This installs Linux prerequisites and mise through apt, then installs chezmoi and uv with their official installers. Both binaries are installed under `~/.local/bin`, and the installers do not modify shell profiles. It does not use Homebrew, Scoop, or Winget.
-
-### Windows
-
-The native Windows bootstrap is not implemented yet. The intended split is Scoop for developer CLI tools, Winget for GUI and system applications, and mise for runtimes.
+This installs Linux prerequisites and mise through apt, installs uv with its official installer, then installs Node LTS and Python 3.12 with mise and enables `.nvmrc` and `.python-version`. It does not use Homebrew.
 
 ### Apply configuration
 
-Install runtimes with mise as needed. Node is optional; when it is unavailable, the managed Claude and OpenCode JSON modifiers print a warning and leave their target JSON unchanged.
+Install additional runtimes with mise as needed. If Node is unavailable despite Bootstrap, the managed Claude and OpenCode JSON modifiers print a warning and leave their target JSON unchanged.
 
-Initialize chezmoi from the reviewed checkout:
-
-```sh
-chezmoi init --source "$HOME/src/configarium"
-chezmoi diff
-chezmoi apply
-```
+After Bootstrap, review and apply the managed configuration with `chezmoi diff` and `chezmoi apply`.
 
 The optional zsh bootstrap is disabled by default. After reviewing `run_onchange_after_initialize.sh.tmpl`, opt in explicitly:
 
@@ -92,7 +81,6 @@ Platform deployment boundaries:
 | --- | --- | --- | --- |
 | macOS | Yes | Yes | Yes |
 | WSL | Yes | No | Yes |
-| Windows | No | No | Yes |
 | Other Linux | No | No | Yes |
 
 WSL is detected when chezmoi reports Linux and `WSL_DISTRO_NAME` is set.

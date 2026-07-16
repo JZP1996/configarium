@@ -1,6 +1,6 @@
 # Configarium
 
-This is a **PERSONAL** [chezmoi](https://www.chezmoi.io/) source for managing common configuration and agent instructions/skills/plugins across macOS, WSL, and Windows. Machine-local shell files, runtimes, package selections, and credentials remain unmanaged. It is **NOT** intended as a general-purpose distribution or a supported setup guide.
+This is a **PERSONAL** [chezmoi](https://www.chezmoi.io/) source for managing common configuration and agent instructions/skills/plugins across macOS and WSL. Machine-local shell files, runtimes, package selections, and credentials remain unmanaged. It is **NOT** intended as a general-purpose distribution or a supported setup guide.
 
 ## Docs
 

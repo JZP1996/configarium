@@ -40,7 +40,7 @@ Curated Claude Code plugins for personal use. Managed via chezmoi.
 2. Install the marketplace and plugins into Claude Code:
 
    ```bash
-  ~/.local/share/chezmoi/agents/claude-code/marketplace/install.sh
+   ~/.local/share/chezmoi/agents/claude-code/marketplace/install.sh
    ```
 
    Idempotent. Re-run anytime to install newly added local plugins.

@@ -57,15 +57,15 @@ It installs Oh My Zsh and zsh plugins from the fixed revisions in [THIRD_PARTY_N
 
 ## Layout
 
-| Source | Target | Purpose |
-| --- | --- | --- |
-| `dot_agents/` | `~/.agents/` | Shared Agent Skills links. |
-| `dot_claude/` | `~/.claude/` | Claude Code instructions and coding Skill links. |
-| `dot_config/` | `~/.config/` | Ghostty configuration, OpenCode instructions, permissions, and plugin links. |
-| `dot_zsh/` | `~/.zsh/` | Shared zsh configuration and functions. |
-| `agents/` | Not deployed | Source for Skills, instructions, and local agent plugins. |
-| `run_onchange_after_initialize.sh.tmpl` | Run on change | Optional, idempotent zsh bootstrap for macOS and WSL. |
-| `scripts/bootstrap/` | Not deployed | Explicit platform bootstrap scripts and package lists. |
+| Source                                  | Target        | Purpose                                                                      |
+| --------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
+| `dot_agents/`                           | `~/.agents/`  | Shared Agent Skills links.                                                   |
+| `dot_claude/`                           | `~/.claude/`  | Claude Code instructions and coding Skill links.                             |
+| `dot_config/`                           | `~/.config/`  | Ghostty configuration, OpenCode instructions, permissions, and plugin links. |
+| `dot_zsh/`                              | `~/.zsh/`     | Shared zsh configuration and functions.                                      |
+| `agents/`                               | Not deployed  | Source for Skills, instructions, and local agent plugins.                    |
+| `run_onchange_after_initialize.sh.tmpl` | Run on change | Optional, idempotent zsh bootstrap for macOS and WSL.                        |
+| `scripts/bootstrap/`                    | Not deployed  | Explicit platform bootstrap scripts and package lists.                       |
 
 `~/.zshrc` remains machine-local. Its first line should source the managed shared configuration:
 
@@ -77,11 +77,11 @@ Do not manage credentials or tool-owned local state here, including `~/.ssh/`, `
 
 Platform deployment boundaries:
 
-| Platform | zsh common | Ghostty | AI common |
-| --- | --- | --- | --- |
-| macOS | Yes | Yes | Yes |
-| WSL | Yes | No | Yes |
-| Other Linux | No | No | Yes |
+| Platform    | zsh common | Ghostty | AI common |
+| ----------- | ---------- | ------- | --------- |
+| macOS       | Yes        | Yes     | Yes       |
+| WSL         | Yes        | No      | Yes       |
+| Other Linux | No         | No      | Yes       |
 
 WSL is detected when chezmoi reports Linux and `WSL_DISTRO_NAME` is set.
 

@@ -12,16 +12,16 @@ These plugins are the origin side of the OpenCode ports documented in [opencode-
 
 ## Plugins
 
-| Plugin                   | Hook events                              | Category    | Notes                                                                                                                                                     |
-| ------------------------ | ---------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sleep-cap`              | `PreToolUse` (Bash)                      | guardrail   | Blocks `sleep` longer than `SLEEP_CAP_THRESHOLD` (default 60s) and suggests `run_in_background`. `# sleep-cap:ignore` in the command bypasses the check.  |
-| `bash-error-diagnostics` | `PreToolUse` + `PostToolUse` (Bash)      | diagnostics | Warns on piped commands missing `pipefail` (pre) and classifies Bash errors with structured diagnostics (post) to prevent blind retries.                  |
-| `git-author-check`       | `PreToolUse` (Bash)                      | git         | Validates git author email before commits. Resolves from `EXPECTED_GIT_EMAIL`, repo `.git-author-check.json`, or `~/.git-author-check.json`.              |
-| `retry-loop-detector`    | `PreToolUse` (all tools)                 | guardrail   | Tracks consecutive identical tool calls; warns, then blocks at the threshold to stop context-wasting retry loops.                                         |
-| `circuit-breaker`        | `PreToolUse` + `PostToolUse` (all tools) | guardrail   | Tracks consecutive identical tool failures and blocks further attempts after 3. Allowlists transient errors (429, ETIMEDOUT, DNS).                        |
-| `time-awareness`         | `PreToolUse` (all tools)                 | utility     | Opt-in via `.time-awareness.json`; injects current system time and timezone into context.                                                                 |
-| `compaction-monitor`     | `PreToolUse` (all tools)                 | utility     | Opt-in via `.compaction-monitor.json`; warns about context-pressure and compaction frequency when thresholds are exceeded.                                |
-| `conversation-summary`   | `PreToolUse` (all tools)                 | utility     | Opt-in via `.conversation-summary.json`; reminds the agent to maintain a running summary. Skill body comes from `agents/skills/conversation-summary`.     |
+| Plugin                   | Hook events                              | Category    | Notes                                                                                                                                                    |
+| ------------------------ | ---------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sleep-cap`              | `PreToolUse` (Bash)                      | guardrail   | Blocks `sleep` longer than `SLEEP_CAP_THRESHOLD` (default 60s) and suggests `run_in_background`. `# sleep-cap:ignore` in the command bypasses the check. |
+| `bash-error-diagnostics` | `PreToolUse` + `PostToolUse` (Bash)      | diagnostics | Warns on piped commands missing `pipefail` (pre) and classifies Bash errors with structured diagnostics (post) to prevent blind retries.                 |
+| `git-author-check`       | `PreToolUse` (Bash)                      | git         | Validates git author email before commits. Resolves from `EXPECTED_GIT_EMAIL`, repo `.git-author-check.json`, or `~/.git-author-check.json`.             |
+| `retry-loop-detector`    | `PreToolUse` (all tools)                 | guardrail   | Tracks consecutive identical tool calls; warns, then blocks at the threshold to stop context-wasting retry loops.                                        |
+| `circuit-breaker`        | `PreToolUse` + `PostToolUse` (all tools) | guardrail   | Tracks consecutive identical tool failures and blocks further attempts after 3. Allowlists transient errors (429, ETIMEDOUT, DNS).                       |
+| `time-awareness`         | `PreToolUse` (all tools)                 | utility     | Opt-in via `.time-awareness.json`; injects current system time and timezone into context.                                                                |
+| `compaction-monitor`     | `PreToolUse` (all tools)                 | utility     | Opt-in via `.compaction-monitor.json`; warns about context-pressure and compaction frequency when thresholds are exceeded.                               |
+| `conversation-summary`   | `PreToolUse` (all tools)                 | utility     | Opt-in via `.conversation-summary.json`; reminds the agent to maintain a running summary. Skill body comes from `agents/skills/conversation-summary`.    |
 
 ## Design Notes
 

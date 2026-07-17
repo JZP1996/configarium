@@ -1,0 +1,25 @@
+# Common shell utility functions
+
+# Use a current Homebrew Bash on macOS and the system Bash on WSL.
+run_bash() {
+{{- if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.arch "arm64" }}
+  /opt/homebrew/bin/bash "$@"
+{{- else }}
+  /usr/local/bin/bash "$@"
+{{- end }}
+{{- else }}
+  command bash "$@"
+{{- end }}
+}
+
+# Preview available runtime updates, then select which ones to install.
+mise_update() {
+  if (( ! $+commands[mise] )); then
+    print -u2 'error: mise is not available'
+    return 127
+  fi
+
+  command mise upgrade --dry-run || return
+  command mise upgrade --interactive
+}

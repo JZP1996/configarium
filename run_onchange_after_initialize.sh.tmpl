@@ -5,6 +5,16 @@
 # Opt-in value: {{ env "CHEZMOI_INSTALL_OPTIONAL_TOOLS" | quote }}
 set -eu
 
+# Always ensure ~/.zshrc loads the common chezmoi-managed configuration.
+ZSHRC="$HOME/.zshrc"
+SRC_LINE='[[ -f ~/.zsh/.zshrc.common ]] && source ~/.zsh/.zshrc.common'
+
+[ -f "$ZSHRC" ] || touch "$ZSHRC"
+
+if ! grep -qFx "$SRC_LINE" "$ZSHRC"; then
+  printf '%s\n\n%s\n' "$SRC_LINE" "$(cat "$ZSHRC")" > "$ZSHRC"
+fi
+
 if [ "${CHEZMOI_INSTALL_OPTIONAL_TOOLS:-}" != "1" ]; then
   exit 0
 fi
@@ -64,14 +74,4 @@ install_git_revision \
   https://github.com/zsh-users/zsh-syntax-highlighting.git \
   1d85c692615a25fe2293bdd44b34c217d5d2bf04 \
   "$ZSH_DIR/zsh-syntax-highlighting"
-
-# Ensure ~/.zshrc sources the common chezmoi-managed config (~/.zsh/.zshrc.common).
-ZSHRC="$HOME/.zshrc"
-SRC_LINE='[[ -f ~/.zsh/.zshrc.common ]] && source ~/.zsh/.zshrc.common'
-
-[ -f "$ZSHRC" ] || touch "$ZSHRC"
-
-if ! grep -qFx "$SRC_LINE" "$ZSHRC"; then
-  printf '%s\n\n%s\n' "$SRC_LINE" "$(cat "$ZSHRC")" > "$ZSHRC"
-fi
 {{ end -}}

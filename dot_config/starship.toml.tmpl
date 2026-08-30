@@ -1,0 +1,46 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false
+scan_timeout = 10
+command_timeout = 200
+
+format = "$python$character$directory$git_branch$custom"
+right_format = "$cmd_duration"
+
+[character]
+format = "$symbol "
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+
+[directory]
+format = "[$path]($style) "
+style = "bold cyan"
+truncation_length = 1
+truncate_to_repo = true
+fish_style_pwd_dir_length = 0
+
+[python]
+format = '[(\($virtualenv\) )]($style)'
+style = "magenta"
+detect_extensions = []
+detect_files = []
+detect_folders = []
+
+[git_branch]
+format = '[git:](bold blue)[\(](blue)[$branch](bold red)[\)](blue) '
+
+[custom.git_dirty]
+command = "echo"
+format = "[✗]($style) "
+style = "yellow"
+ignore_timeout = true
+{{ if eq .chezmoi.os "windows" -}}
+shell = ["cmd", "/C"]
+when = 'git status --porcelain --ignore-submodules=all 2>nul | findstr . >nul'
+{{ else -}}
+when = 'test -n "$(git status --porcelain --ignore-submodules=all 2>/dev/null)"'
+{{ end -}}
+
+[cmd_duration]
+min_time = 2_000
+format = "took [$duration](bright-black) "

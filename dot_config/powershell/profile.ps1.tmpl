@@ -1,0 +1,85 @@
+{{ $c := .one_half_light -}}
+if ($global:ConfigariumProfileLoaded) {
+    return
+}
+
+$pathEntries = [System.Collections.Generic.HashSet[string]]::new(
+    [System.StringComparer]::OrdinalIgnoreCase
+)
+
+foreach ($pathEntry in $env:Path -split [System.IO.Path]::PathSeparator) {
+    if (-not [string]::IsNullOrWhiteSpace($pathEntry)) {
+        [void]$pathEntries.Add($pathEntry)
+    }
+}
+
+foreach ($pathScope in [System.EnvironmentVariableTarget]::User,
+    [System.EnvironmentVariableTarget]::Machine) {
+    $persistedPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
+    foreach ($pathEntry in $persistedPath -split [System.IO.Path]::PathSeparator) {
+        if (-not [string]::IsNullOrWhiteSpace($pathEntry) -and $pathEntries.Add($pathEntry)) {
+            $env:Path += [System.IO.Path]::PathSeparator + $pathEntry
+        }
+    }
+}
+
+$OneHalfLight = @{
+{{ range $name, $hex := $c }}{{ if ne $name "name" }}    {{ $name }} = {{ $hex | replace "#" "0x" }}
+{{ end }}{{ end }}}
+
+if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
+    Set-PSReadLineOption -Colors @{
+        ContinuationPrompt     = $PSStyle.Foreground.FromRgb($OneHalfLight.cyan)
+        Emphasis               = $PSStyle.Foreground.FromRgb($OneHalfLight.red)
+        Selection              = $PSStyle.Background.FromRgb($OneHalfLight.selection)
+
+        InlinePrediction       = $PSStyle.Foreground.FromRgb($OneHalfLight.brightBlack)
+        ListPrediction         = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+        ListPredictionSelected = $PSStyle.Background.FromRgb($OneHalfLight.selection)
+
+        Command                = $PSStyle.Foreground.FromRgb($OneHalfLight.blue)
+        Comment                = $PSStyle.Foreground.FromRgb($OneHalfLight.brightBlack)
+        Default                = $PSStyle.Foreground.FromRgb($OneHalfLight.foreground)
+        Error                  = $PSStyle.Foreground.FromRgb($OneHalfLight.red)
+        Keyword                = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+        Member                 = $PSStyle.Foreground.FromRgb($OneHalfLight.cyan)
+        Number                 = $PSStyle.Foreground.FromRgb($OneHalfLight.yellow)
+        Operator               = $PSStyle.Foreground.FromRgb($OneHalfLight.brightBlack)
+        Parameter              = $PSStyle.Foreground.FromRgb($OneHalfLight.black)
+        String                 = $PSStyle.Foreground.FromRgb($OneHalfLight.green)
+        Type                   = $PSStyle.Foreground.FromRgb($OneHalfLight.red)
+        Variable               = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+    }
+}
+
+$PSStyle.Formatting.FormatAccent = $PSStyle.Foreground.FromRgb($OneHalfLight.cyan)
+$PSStyle.Formatting.TableHeader = $PSStyle.Foreground.FromRgb($OneHalfLight.black)
+$PSStyle.Formatting.ErrorAccent = $PSStyle.Foreground.FromRgb($OneHalfLight.blue)
+$PSStyle.Formatting.Error = $PSStyle.Foreground.FromRgb($OneHalfLight.red)
+$PSStyle.Formatting.Warning = $PSStyle.Foreground.FromRgb($OneHalfLight.yellow)
+$PSStyle.Formatting.Verbose = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+$PSStyle.Formatting.Debug = $PSStyle.Foreground.FromRgb($OneHalfLight.brightBlack)
+$PSStyle.Progress.Style = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+
+if ($PSStyle.Formatting.PSObject.Properties.Name -contains "CustomTableHeaderLabel") {
+    $PSStyle.Formatting.CustomTableHeaderLabel =
+        $PSStyle.Foreground.FromRgb($OneHalfLight.black)
+}
+
+$PSStyle.FileInfo.Directory = $PSStyle.Foreground.FromRgb($OneHalfLight.blue)
+$PSStyle.FileInfo.SymbolicLink = $PSStyle.Foreground.FromRgb($OneHalfLight.cyan)
+$PSStyle.FileInfo.Executable = $PSStyle.Foreground.FromRgb($OneHalfLight.purple)
+foreach ($extension in ".ps1", ".ps1xml", ".psd1", ".psm1") {
+    $PSStyle.FileInfo.Extension[$extension] = $PSStyle.Foreground.FromRgb($OneHalfLight.cyan)
+}
+
+$mise = Get-Command mise -ErrorAction SilentlyContinue
+if ($mise) {
+    mise activate pwsh | Out-String | Invoke-Expression
+}
+
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    Invoke-Expression (&starship init powershell)
+}
+
+$global:ConfigariumProfileLoaded = $true

@@ -1,0 +1,102 @@
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+#!/bin/sh
+set -eu
+
+ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
+BEGIN_MARKER='# BEGIN CONFIGARIUM'
+END_MARKER='# END CONFIGARIUM'
+SRC_LINE='[[ -f ~/.zsh/.zshrc.common ]] && source ~/.zsh/.zshrc.common'
+
+[ -f "$ZSHRC" ] || touch "$ZSHRC"
+
+begin_count=$(awk -v marker="$BEGIN_MARKER" '{ sub(/\r$/, "") } $0 == marker { count++ } END { print count + 0 }' "$ZSHRC")
+end_count=$(awk -v marker="$END_MARKER" '{ sub(/\r$/, "") } $0 == marker { count++ } END { print count + 0 }' "$ZSHRC")
+marker_order_valid=$(awk -v begin_marker="$BEGIN_MARKER" -v end_marker="$END_MARKER" '
+  { sub(/\r$/, "") }
+  $0 == begin_marker {
+    if (state != 0) invalid = 1
+    state = 1
+  }
+  $0 == end_marker {
+    if (state != 1) invalid = 1
+    state = 2
+  }
+  END { print (!invalid && state != 1) ? "true" : "false" }
+' "$ZSHRC")
+if [ "$begin_count" -ne "$end_count" ] || [ "$begin_count" -gt 1 ] ||
+  [ "$marker_order_valid" != true ]; then
+  printf 'error: invalid Configarium markers in %s\n' "$ZSHRC" >&2
+  exit 1
+fi
+
+conflicts=$(awk '
+  {
+    line = $0
+    sub(/\r$/, "", line)
+  }
+  line ~ /^[[:space:]]*eval[[:space:]]+"?\$\(mise activate zsh\)"?[[:space:]]*$/ ||
+  line ~ /^[[:space:]]*eval[[:space:]]+"?\$\(starship init zsh\)"?[[:space:]]*$/ {
+    print NR ":" line
+  }
+' "$ZSHRC")
+
+if [ -n "$conflicts" ]; then
+  printf '%s\n' \
+    'Configarium found existing shell initialization that would run twice:' \
+    "$conflicts"
+
+  if [ ! -t 0 ]; then
+    printf '%s\n' \
+      'error: run chezmoi apply interactively to migrate this configuration' >&2
+    exit 1
+  fi
+
+  printf 'Back up %s and remove these lines? [y/N] ' "$ZSHRC"
+  IFS= read -r answer
+  case "$answer" in
+    y|Y|yes|YES|Yes) ;;
+    *)
+      printf '%s\n' 'error: shell initialization migration was cancelled' >&2
+      exit 1
+      ;;
+  esac
+
+  backup="$ZSHRC.configarium-backup-$(date +%Y%m%d%H%M%S)"
+  cp -p "$ZSHRC" "$backup"
+  printf 'Backed up %s to %s\n' "$ZSHRC" "$backup"
+fi
+
+temporary_file=$(mktemp)
+trap 'rm -f "$temporary_file"' EXIT HUP INT TERM
+awk -v begin_marker="$BEGIN_MARKER" -v end_marker="$END_MARKER" -v source_line="$SRC_LINE" '
+  {
+    line = $0
+    sub(/\r$/, "", line)
+  }
+  line == begin_marker { managed = 1; next }
+  managed && line == end_marker { managed = 0; next }
+  managed { next }
+  line == source_line { next }
+  line ~ /^[[:space:]]*eval[[:space:]]+"?\$\(mise activate zsh\)"?[[:space:]]*$/ { next }
+  line ~ /^[[:space:]]*eval[[:space:]]+"?\$\(starship init zsh\)"?[[:space:]]*$/ { next }
+  { print line }
+' "$ZSHRC" > "$temporary_file"
+
+while [ -s "$temporary_file" ] && [ -z "$(tail -n 1 "$temporary_file")" ]; do
+  trimmed_file="$temporary_file.trimmed"
+  sed '$d' "$temporary_file" > "$trimmed_file"
+  mv "$trimmed_file" "$temporary_file"
+done
+
+if [ -s "$temporary_file" ]; then
+  printf '\n' >> "$temporary_file"
+fi
+printf '%s\n%s\n%s\n' "$BEGIN_MARKER" "$SRC_LINE" "$END_MARKER" >> "$temporary_file"
+
+if ! cmp -s "$temporary_file" "$ZSHRC"; then
+  cat "$temporary_file" > "$ZSHRC"
+fi
+
+rm -f "$temporary_file"
+trap - EXIT HUP INT TERM
+{{ end -}}

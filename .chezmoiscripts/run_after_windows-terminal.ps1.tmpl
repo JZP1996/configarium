@@ -1,0 +1,138 @@
+{{ if eq .chezmoi.os "windows" -}}
+{{- $c := .one_half_light -}}
+#Requires -Version 7
+$ErrorActionPreference = "Stop"
+
+$name = "Configarium {{ $c.name }}"
+$schemeName = $name
+$legacySchemeName = "Managed {{ $c.name }}"
+$legacyThemeName = "{{ $c.name }}"
+
+$tabTheme = [ordered]@{
+    name   = $name
+    tab    = [ordered]@{
+        background      = "{{ $c.background }}FF"
+        showCloseButton = "always"
+    }
+    tabRow = [ordered]@{
+        background          = "{{ $c.brightWhite }}FF"
+        unfocusedBackground = "{{ $c.background }}FF"
+    }
+    window = [ordered]@{
+        applicationTheme = "light"
+    }
+}
+
+$defaults = [ordered]@{
+    colorScheme       = $schemeName
+    cursorShape       = "bar"
+    intenseTextStyle  = "bold"
+    opacity           = 85
+    useAcrylic        = $true
+    padding           = "10"
+}
+$scheme = [ordered]@{
+    name                = $schemeName
+    background          = "{{ $c.background }}"
+    foreground          = "{{ $c.foreground }}"
+    cursorColor         = "{{ $c.cursor }}"
+    selectionBackground = "{{ $c.selection }}"
+    black               = "{{ $c.black }}"
+    red                 = "{{ $c.red }}"
+    green               = "{{ $c.green }}"
+    yellow              = "{{ $c.yellow }}"
+    blue                = "{{ $c.blue }}"
+    purple              = "{{ $c.purple }}"
+    cyan                = "{{ $c.cyan }}"
+    white               = "{{ $c.white }}"
+    brightBlack         = "{{ $c.brightBlack }}"
+    brightRed           = "{{ $c.brightRed }}"
+    brightGreen         = "{{ $c.brightGreen }}"
+    brightYellow        = "{{ $c.brightYellow }}"
+    brightBlue          = "{{ $c.brightBlue }}"
+    brightPurple        = "{{ $c.brightPurple }}"
+    brightCyan          = "{{ $c.brightCyan }}"
+    brightWhite         = "{{ $c.brightWhite }}"
+}
+$defaultFont = [ordered]@{
+    face = "JetBrainsMono Nerd Font Mono"
+    size = 13
+}
+
+function Resolve-SettingsPath {
+    $paths = @()
+
+    $packages = Join-Path $env:LOCALAPPDATA "Packages"
+    if (Test-Path $packages) {
+        $paths += Get-ChildItem $packages -Directory -Filter "Microsoft.WindowsTerminal*" -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName "LocalState\settings.json" }
+    }
+
+    $paths += Join-Path $env:LOCALAPPDATA "Microsoft\Windows Terminal\settings.json"
+
+    $paths | Where-Object { Test-Path $_ } | Sort-Object -Unique
+}
+
+function Expand-Entries($value) {
+    foreach ($item in @($value)) {
+        if ($null -eq $item) { continue }
+        if ($item -is [System.Collections.IDictionary]) {
+            $item
+        }
+        elseif ($item -isnot [string] -and $item -is [System.Collections.IEnumerable]) {
+            Expand-Entries $item
+        }
+    }
+}
+
+function Merge-Entry($list, $entry) {
+    $kept = @(Expand-Entries $list | Where-Object { $_["name"] -ne $entry["name"] })
+    $kept + @($entry)
+}
+
+$targets = @(Resolve-SettingsPath)
+
+if ($targets.Count -eq 0) {
+    Write-Host "Windows Terminal settings.json not found; nothing to configure."
+    exit 0
+}
+
+foreach ($path in $targets) {
+    $settings = Get-Content $path -Raw | ConvertFrom-Json -AsHashtable
+    if (-not $settings) { $settings = [ordered]@{} }
+
+    $before = $settings | ConvertTo-Json -Depth 100 -Compress
+
+    $settings["schemes"] = @(Merge-Entry $settings["schemes"] $scheme)
+    $settings["schemes"] = @($settings["schemes"] | Where-Object { $_["name"] -ne $legacySchemeName })
+    $settings["themes"] = @(Merge-Entry $settings["themes"] $tabTheme)
+    $settings["themes"] = @($settings["themes"] | Where-Object { $_["name"] -ne $legacyThemeName })
+    $settings["theme"] = $name
+
+    if (-not $settings["profiles"]) { $settings["profiles"] = [ordered]@{} }
+    if (-not $settings["profiles"]["defaults"]) { $settings["profiles"]["defaults"] = [ordered]@{} }
+
+    foreach ($profile in @(Expand-Entries $settings["profiles"]["list"])) {
+        if ($profile["colorScheme"] -eq $legacySchemeName) {
+            $profile["colorScheme"] = $schemeName
+        }
+    }
+
+    foreach ($key in $defaults.Keys) {
+        $settings["profiles"]["defaults"][$key] = $defaults[$key]
+    }
+    if (-not $settings["profiles"]["defaults"]["font"]) {
+        $settings["profiles"]["defaults"]["font"] = [ordered]@{}
+    }
+    foreach ($key in $defaultFont.Keys) {
+        $settings["profiles"]["defaults"]["font"][$key] = $defaultFont[$key]
+    }
+
+    $after = $settings | ConvertTo-Json -Depth 100 -Compress
+
+    if ($before -ne $after) {
+        $settings | ConvertTo-Json -Depth 100 | Set-Content $path -Encoding utf8
+        Write-Host "Updated $path"
+    }
+}
+{{ end -}}

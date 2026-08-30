@@ -1,0 +1,19 @@
+# Security Policy
+
+## Credentials
+
+Do not commit credentials, tokens, private keys, certificates, `.env` files, provider configuration, or machine-local tool state. Use local files ignored by `.gitignore` and a secret manager appropriate for your environment.
+
+Before each commit, run:
+
+```sh
+scripts/check-secrets.sh
+```
+
+The check scans both Git history and the current working tree. The repository's pre-commit hook runs the staged-only mode and blocks commits when gitleaks is unavailable or detects a secret. Enable it with `git config core.hooksPath .githooks`.
+
+The check requires [gitleaks](https://github.com/gitleaks/gitleaks). Install it through your operating system's package manager or from its verified upstream release before running the script. It is deliberately not installed automatically.
+
+## Reporting a vulnerability
+
+After this repository is published, report vulnerabilities through the repository's private GitHub security advisory feature. Do not include exploitable details or credentials in a public issue. If private reporting is unavailable, contact the maintainer through the public GitHub account associated with the repository and request a private channel.

@@ -1,0 +1,34 @@
+README.md
+.gitattributes
+.vscode
+.vscode/**
+.githooks
+.githooks/**
+docs
+docs/**
+plan
+plan/**
+LICENSE
+SECURITY.md
+THIRD_PARTY_NOTICES.md
+THIRD_PARTY_LICENSES
+THIRD_PARTY_LICENSES/**
+.github
+.github/**
+.gitleaks.toml
+scripts
+scripts/**
+{{ if not (or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux")) }}
+.zsh
+.zsh/**
+{{ end }}
+{{ if ne .chezmoi.os "darwin" }}
+.config/ghostty
+.config/ghostty/**
+{{ end }}
+{{ if ne .chezmoi.os "windows" }}
+.config/powershell
+.config/powershell/**
+Documents
+Documents/**
+{{ end }}

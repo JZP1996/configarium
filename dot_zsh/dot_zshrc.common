@@ -1,0 +1,65 @@
+if (( ${+CONFIGARIUM_ZSH_LOADED} )); then
+  return
+fi
+
+# PATH
+typeset -U path
+path=(
+  $HOME/.local/bin
+  $path
+)
+
+# Docker Completion
+[[ -d $HOME/.docker/completions ]] && fpath=($HOME/.docker/completions $fpath)
+
+# Oh My Zsh
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME=""
+plugins=(git)
+if [[ -r $ZSH/oh-my-zsh.sh ]] && (( ! $+functions[omz] )); then
+  source "$ZSH/oh-my-zsh.sh"
+fi
+
+# Zsh Completion
+if (( ! $+functions[compdef] )); then
+  autoload -Uz compinit
+  if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+  else
+    compinit -C
+  fi
+fi
+
+zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+# Custom Functions
+for f in $HOME/.zsh/functions/*.zsh(N); do
+  source "$f"
+done
+
+# Local Zsh
+for f in $HOME/.zsh/zshrc.local.d/*.zsh(N); do
+  source "$f"
+done
+
+# Zsh Autosuggestions
+[[ -f $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
+  source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# MISE
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)"
+fi
+
+# Starship
+if (( $+commands[starship] )); then
+  eval "$(starship init zsh)"
+fi
+
+# Zsh Syntax Highlighting must be loaded last.
+[[ -f $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+  source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+typeset -g CONFIGARIUM_ZSH_LOADED=1

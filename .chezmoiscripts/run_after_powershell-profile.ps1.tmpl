@@ -1,0 +1,110 @@
+{{ if eq .chezmoi.os "windows" -}}
+#Requires -Version 7
+$ErrorActionPreference = "Stop"
+
+$profilePath = $PROFILE.CurrentUserAllHosts
+$profileDirectory = Split-Path $profilePath -Parent
+$beginMarker = "# BEGIN CONFIGARIUM"
+$endMarker = "# END CONFIGARIUM"
+$legacySourceLine = '. "$HOME\.config\powershell\profile.ps1"'
+$legacyBlock = @(
+    '$managedProfile = "$HOME\.config\powershell\profile.ps1"',
+    'if (Test-Path $managedProfile) {',
+    '    . $managedProfile',
+    '}'
+)
+$managedBlock = @'
+# BEGIN CONFIGARIUM
+$managedProfile = "$HOME\.config\powershell\profile.ps1"
+if (Test-Path $managedProfile) {
+    . $managedProfile
+}
+# END CONFIGARIUM
+'@
+
+New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
+if (-not (Test-Path $profilePath)) {
+    New-Item -ItemType File -Path $profilePath -Force | Out-Null
+}
+
+$originalContent = [string](Get-Content $profilePath -Raw)
+$lines = @($originalContent -replace "\r\n?", "`n" -split "`n")
+$beginCount = @($lines | Where-Object { $_ -eq $beginMarker }).Count
+$endCount = @($lines | Where-Object { $_ -eq $endMarker }).Count
+$beginIndex = [Array]::IndexOf($lines, $beginMarker)
+$endIndex = [Array]::IndexOf($lines, $endMarker)
+if ($beginCount -ne $endCount -or $beginCount -gt 1 -or
+    ($beginCount -eq 1 -and $beginIndex -gt $endIndex)) {
+    throw "Invalid Configarium markers in $profilePath"
+}
+
+$conflicts = for ($index = 0; $index -lt $lines.Count; $index++) {
+    $line = $lines[$index]
+    if ($line -match '^\s*mise activate pwsh\s*\|\s*Out-String\s*\|\s*Invoke-Expression\s*$' -or
+        $line -match '^\s*Invoke-Expression\s+\(&starship init powershell\)\s*$') {
+        "{0}:{1}" -f ($index + 1), $line
+    }
+}
+
+if ($conflicts) {
+    Write-Host "Configarium found existing shell initialization that would run twice:"
+    $conflicts | ForEach-Object { Write-Host $_ }
+
+    if ([Console]::IsInputRedirected) {
+        throw "Run chezmoi apply interactively to migrate this configuration"
+    }
+
+    $answer = Read-Host "Back up $profilePath and remove these lines? [y/N]"
+    if ($answer -notmatch '^(?i:y|yes)$') {
+        throw "Shell initialization migration was cancelled"
+    }
+
+    $backupPath = "$profilePath.configarium-backup-$(Get-Date -Format yyyyMMddHHmmss)"
+    Copy-Item $profilePath $backupPath
+    Write-Host "Backed up $profilePath to $backupPath"
+}
+
+$profileLines = [System.Collections.Generic.List[string]]::new()
+$managed = $false
+for ($index = 0; $index -lt $lines.Count; $index++) {
+    $line = $lines[$index]
+    if ($line -eq $beginMarker) {
+        $managed = $true
+        continue
+    }
+    if ($managed -and $line -eq $endMarker) {
+        $managed = $false
+        continue
+    }
+    if ($managed -or $line -eq $legacySourceLine) {
+        continue
+    }
+    if ($index + $legacyBlock.Count -le $lines.Count -and
+        [Linq.Enumerable]::SequenceEqual(
+            [string[]]$legacyBlock,
+            [string[]]$lines[$index..($index + $legacyBlock.Count - 1)]
+        )) {
+        $index += $legacyBlock.Count - 1
+        continue
+    }
+    if ($line -match '^\s*mise activate pwsh\s*\|\s*Out-String\s*\|\s*Invoke-Expression\s*$' -or
+        $line -match '^\s*Invoke-Expression\s+\(&starship init powershell\)\s*$') {
+        continue
+    }
+    $profileLines.Add($line)
+}
+
+while ($profileLines.Count -gt 0 -and [string]::IsNullOrWhiteSpace($profileLines[-1])) {
+    $profileLines.RemoveAt($profileLines.Count - 1)
+}
+
+$profileContent = if ($profileLines.Count -eq 0) {
+    "$managedBlock`n"
+} else {
+    "$($profileLines -join "`n")`n`n$managedBlock`n"
+}
+
+if ($profileContent -ne $originalContent) {
+    Set-Content -Path $profilePath -Value $profileContent -NoNewline
+}
+{{ end -}}

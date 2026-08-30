@@ -1,0 +1,36 @@
+# Common shell utility functions
+
+# Prefer a current Homebrew Bash on macOS and fall back to the Bash on PATH.
+run_bash() {
+{{- if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.arch "arm64" }}
+  if [[ -x /opt/homebrew/bin/bash ]]; then
+    local bash_path=/opt/homebrew/bin/bash
+  else
+    local bash_path=$commands[bash]
+  fi
+{{- else }}
+  if [[ -x /usr/local/bin/bash ]]; then
+    local bash_path=/usr/local/bin/bash
+  else
+    local bash_path=$commands[bash]
+  fi
+{{- end }}
+{{- else }}
+  local bash_path=$commands[bash]
+{{- end }}
+
+  print -u2 -r -- "Using Bash: $bash_path"
+  "$bash_path" "$@"
+}
+
+# Preview available runtime updates, then select which ones to install.
+mise_update() {
+  if (( ! $+commands[mise] )); then
+    print -u2 'error: mise is not available'
+    return 127
+  fi
+
+  command mise upgrade --dry-run || return
+  command mise upgrade --interactive
+}
